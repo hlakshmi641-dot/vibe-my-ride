@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vibe My Ride – Route Selection</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700&display=swap');
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --red: #e8001c;
+      --orange: #d85a00;
+      --orange-light: #ff7b00;
+      --white: #ffffff;
+      --black: #000000;
+      --dark: #0a0a0a;
+      --muted: #888888;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background-color: var(--black);
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(216, 90, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(216, 90, 0, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Corner accent blobs */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px;
+      right: -120px;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,0,28,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .corner-glow {
+      position: fixed;
+      bottom: -120px;
+      left: -120px;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(216,90,0,0.10) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Main card */
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 560px;
+      padding: 56px 48px 48px;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-top: 3px solid var(--red);
+      background: rgba(10,10,10,0.85);
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Step tag */
+    .step-tag {
+      display: inline-block;
+      font-family: 'Barlow', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--orange);
+      border: 1px solid rgba(216,90,0,0.4);
+      padding: 4px 12px;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    /* Title */
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(32px, 6vw, 44px);
+      letter-spacing: 2px;
+      line-height: 0.95;
+      color: var(--white);
+      margin-bottom: 8px;
+      animation: fadeUp 0.6s 0.15s ease both;
+    }
+
+    h1 span {
+      color: var(--red);
+    }
+
+    /* Subtitles */
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 40px;
+      line-height: 1.5;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .subtitle strong {
+      color: var(--orange-light);
+    }
+
+    /* Inputs */
+    .input-group {
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s 0.25s ease both;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-dot {
+      position: absolute;
+      left: 18px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .input-dot.pickup { background: var(--orange); }
+    .input-dot.drop   { background: var(--red); }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 18px 20px 18px 46px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-left: 3px solid rgba(216,90,0,0.5);
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      appearance: none;
+    }
+
+    input[type="text"]::placeholder {
+      color: rgba(255,255,255,0.2);
+      font-weight: 400;
+    }
+
+    input[type="text"]:focus {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(232,0,28,0.6);
+      border-left-color: var(--red);
+    }
+
+    .input-group:nth-child(2) input {
+      border-left-color: rgba(232,0,28,0.5);
+    }
+
+    /* Connector line */
+    .connector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: -8px 0 -4px 16px;
+      animation: fadeUp 0.6s 0.28s ease both;
+    }
+
+    .connector-line {
+      width: 1px;
+      height: 20px;
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* Sarcasm note */
+    .sarcasm {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      font-style: italic;
+      margin-top: -8px;
+      margin-bottom: 32px;
+      padding-left: 4px;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    /* Button */
+    .cta-btn {
+      width: 100%;
+      padding: 20px;
+      background: var(--red);
+      border: none;
+      color: var(--white);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.25s, transform 0.1s;
+      animation: fadeUp 0.6s 0.35s ease both;
+    }
+
+    .cta-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--orange);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    .cta-btn:hover::before {
+      transform: translateX(0);
+    }
+
+    .cta-btn:hover {
+      background: var(--orange);
+    }
+
+    .cta-btn:active {
+      transform: scale(0.98);
+    }
+
+    .cta-btn span {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Footer note */
+    .footer-note {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.5px;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    .footer-note strong {
+      color: rgba(216,90,0,0.5);
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin: 32px 0;
+      animation: fadeUp 0.6s 0.32s ease both;
+    }
+
+    /* Error shake */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-8px); }
+      40%       { transform: translateX(8px); }
+      60%       { transform: translateX(-5px); }
+      80%       { transform: translateX(5px); }
+    }
+
+    .shake { animation: shake 0.35s ease; }
+  </style>
+</head>
+<body>
+
+  <div class="corner-glow"></div>
+
+  <div class="card">
+    <div class="step-tag">Step 01 of Many, Many Steps</div>
+
+    <h1>Enter Your<br><span>Route</span></h1>
+
+    <p class="subtitle">
+      Step 1: Basic travel info — <strong>finally something normal.</strong><br>
+      This is the last logical step. Enjoy it.
+    </p>
+
+    <div class="input-group">
+      <label>Pickup Location</label>
+      <div class="input-wrapper">
+        <div class="input-dot pickup"></div>
+        <input type="text" id="pickup" placeholder="Where are you right now?" />
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="connector-line"></div>
+    </div>
+
+    <div class="input-group" style="animation-delay: 0.28s">
+      <label>Drop Location</label>
+      <div class="input-wrapper">
+        <div class="input-dot drop"></div>
+        <input type="text" id="drop" placeholder="Where are you trying to escape to?" />
+      </div>
+    </div>
+
+    <p class="sarcasm">Don't worry, it gets worse.</p>
+
+    <hr class="divider" />
+
+    <button class="cta-btn" onclick="handleContinue()">
+      <span>VibeMyRide</span>
+    </button>
+
+    <p class="footer-note">
+      No GPS needed. We'll figure it out with <strong>vibes</strong> and gut feelings.
+    </p>
+  </div>
+
+  <script>
+    function handleContinue() {
+      var pickup = document.getElementById('pickup').value.trim();
+      var drop = document.getElementById('drop').value.trim();
+
+      if (!pickup || !drop) {
+        var card = document.querySelector('.card');
+        card.classList.remove('shake');
+        void card.offsetWidth;
+        card.classList.add('shake');
+
+        if (!pickup) document.getElementById('pickup').style.borderColor = '#e8001c';
+        if (!drop)   document.getElementById('drop').style.borderColor = '#e8001c';
+
+        setTimeout(function() {
+          card.classList.remove('shake');
+        }, 400);
+        return;
+      }
+
+      window.location.href = 'riders.html';
+    }
+
+    document.getElementById('pickup').addEventListener('input', function() {
+      this.style.borderColor = '';
+    });
+
+    document.getElementById('drop').addEventListener('input', function() {
+      this.style.borderColor = '';
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') handleContinue();
+    });
+  </script>
+
+</body>
+</html>

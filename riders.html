@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vibe My Ride – Find Your Rider</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #e8001c;
+      --orange: #d85a00;
+      --orange-light: #ff7b00;
+      --white: #ffffff;
+      --black: #000000;
+      --muted: #777777;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background-color: var(--black);
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 90px 24px 60px;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(216,90,0,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(216,90,0,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -100px; right: -100px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,0,28,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .corner-glow {
+      position: fixed;
+      bottom: -100px; left: -100px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(216,90,0,0.09) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Header */
+    .page-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.92);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; }
+    .logo span { color: var(--red); }
+
+    .counter { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+    .counter em { color: var(--orange-light); font-style: normal; }
+
+    /* Card wrapper */
+    .card-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* Rider card */
+    .rider-card {
+      background: rgba(10,10,10,0.97);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 3px solid var(--red);
+      box-shadow: 0 0 60px rgba(232,0,28,0.08), 0 8px 40px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 32px 30px;
+      cursor: grab;
+      touch-action: none;
+      will-change: transform;
+      animation: cardIn 0.35s ease both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(18px) scale(0.97); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .rider-card:active { cursor: grabbing; }
+
+    /* Swipe stamps */
+    .stamp {
+      position: absolute;
+      top: 36px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 4px;
+      border: 3px solid;
+      padding: 4px 14px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      transition: opacity 0.08s;
+    }
+    .stamp-skip  { right: 24px; color: var(--red); border-color: var(--red); transform: rotate(12deg); }
+    .stamp-match { left:  24px; color: var(--orange-light); border-color: var(--orange-light); transform: rotate(-12deg); }
+
+    /* Avatar */
+    .avatar-ring {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      border: 2px solid rgba(232,0,28,0.4);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.02);
+      position: relative;
+    }
+    .avatar-ring::before {
+      content: '';
+      position: absolute; inset: -6px;
+      border-radius: 50%;
+      border: 1px solid rgba(216,90,0,0.15);
+    }
+    .avatar-emoji { font-size: 46px; line-height: 1; }
+
+    /* Name */
+    .rider-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 46px;
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+    }
+
+    /* Compat */
+    .compat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 22px; }
+    .compat-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+    .bar-bg { width: 80px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--orange-light); border-radius: 2px; }
+    .compat-pct { font-size: 14px; font-weight: 700; color: var(--orange-light); }
+
+    /* Prefs */
+    .prefs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 30px; }
+    .pref-tag {
+      font-size: 13px; font-weight: 600;
+      padding: 6px 14px;
+      border: 1px solid rgba(255,123,0,0.4);
+      color: var(--orange-light);
+      background: rgba(216,90,0,0.08);
+    }
+
+    /* Actions */
+    .actions { display: flex; gap: 12px; width: 100%; }
+
+    .btn-skip {
+      flex: 1; padding: 15px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--muted);
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px; font-weight: 700; letter-spacing: 1px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-skip:hover { border-color: var(--red); color: var(--red); }
+
+    .btn-match {
+      flex: 2; padding: 15px;
+      background: var(--red);
+      border: none;
+      color: var(--white);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px; letter-spacing: 2px;
+      cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: transform 0.1s;
+    }
+    .btn-match::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--orange);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+    .btn-match:hover::before { transform: translateX(0); }
+    .btn-match:active { transform: scale(0.97); }
+    .btn-match span { position: relative; z-index: 1; }
+
+    /* Empty state */
+    .empty-state { position: relative; z-index: 1; text-align: center; display: none; animation: cardIn 0.4s ease both; }
+    .empty-state.show { display: block; }
+    .empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 3px; color: var(--red); margin-bottom: 10px; }
+    .empty-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.7; }
+    .empty-sub strong { color: var(--orange-light); }
+
+    .restart-btn {
+      padding: 16px 36px;
+      background: var(--red); border: none;
+      color: var(--white);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px; letter-spacing: 2px;
+      cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: transform 0.1s;
+    }
+    .restart-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--orange);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+    .restart-btn:hover::before { transform: translateX(0); }
+    .restart-btn span { position: relative; z-index: 1; }
+
+    /* Swipe hint */
+    .swipe-hint {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px; color: rgba(255,255,255,0.18);
+      letter-spacing: 1px; text-transform: uppercase;
+      z-index: 5; white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="corner-glow"></div>
+
+  <div class="page-header">
+    <div class="logo">Vibe<span>MyRide</span></div>
+    <div class="counter">Rider <em id="counter">1</em> of 3</div>
+  </div>
+
+  <div class="card-wrap" id="card-wrap"></div>
+
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">🏍️</div>
+    <div class="empty-title">No More Vibe Matches</div>
+    <p class="empty-sub">You've seen all available riders.<br><strong>Apparently your vibe is very exclusive.</strong></p>
+    <button class="restart-btn" onclick="window.location.href='riders.html'">
+      <span>Start Over 🔄</span>
+    </button>
+  </div>
+
+  <div class="swipe-hint" id="swipe-hint">← swipe to skip &nbsp;·&nbsp; swipe right to match →</div>
+
+  <script>
+    var riders = [
+      { emoji: '🎧', name: 'Aarav', prefs: ['🎵 Music Vibe', '💬 Yapp Mode'], compat: 92, fare: 120, vibe: 'Music Vibe' },
+      { emoji: '🤐', name: 'Riya',  prefs: ['🤐 Silent Ride'],                compat: 87, fare: 100, vibe: 'Silent Ride' },
+      { emoji: '😎', name: 'Kabir', prefs: ['🤐 Silent Ride', '🎵 Music Vibe'], compat: 90, fare: 110, vibe: 'Music Vibe' }
+    ];
+
+    var current = 0;
+
+    function renderCard() {
+      if (current >= riders.length) {
+        document.getElementById('card-wrap').style.display = 'none';
+        document.getElementById('swipe-hint').style.display = 'none';
+        document.getElementById('empty-state').classList.add('show');
+        return;
+      }
+
+      document.getElementById('counter').textContent = current + 1;
+
+      var r = riders[current];
+      var wrap = document.getElementById('card-wrap');
+
+      wrap.innerHTML =
+        '<div class="rider-card" id="active-card">' +
+          '<div class="stamp stamp-skip">SKIP</div>' +
+          '<div class="stamp stamp-match">MATCH</div>' +
+          '<div class="avatar-ring"><span class="avatar-emoji">' + r.emoji + '</span></div>' +
+          '<div class="rider-name">' + r.name + '</div>' +
+          '<div class="compat-row">' +
+            '<span class="compat-label">Match</span>' +
+            '<div class="bar-bg"><div class="bar-fill" style="width:' + r.compat + '%"></div></div>' +
+            '<span class="compat-pct">' + r.compat + '%</span>' +
+          '</div>' +
+          '<div class="prefs">' +
+            r.prefs.map(function(p) { return '<span class="pref-tag">' + p + '</span>'; }).join('') +
+          '</div>' +
+          '<div class="actions">' +
+            '<button class="btn-skip" onclick="skipRider()">Skip ✕</button>' +
+            '<button class="btn-match" onclick="matchRider()"><span>Match Ride 🏍️</span></button>' +
+          '</div>' +
+        '</div>';
+
+      initDrag();
+    }
+
+    function skipRider() {
+      animateOut('skip', function() {
+        current++;
+        renderCard();
+      });
+    }
+
+    function matchRider() {
+      var r = riders[current];
+      animateOut('match', function() {
+        window.location.href =
+          'confirmride.html?name=' + encodeURIComponent(r.name) +
+          '&fare=' + r.fare +
+          '&vibe=' + encodeURIComponent(r.vibe) +
+          '&emoji=' + encodeURIComponent(r.emoji);
+      });
+    }
+
+    function animateOut(dir, cb) {
+      var card = document.getElementById('active-card');
+      if (!card) return;
+      var tx  = dir === 'skip' ? -520 : 520;
+      var rot = dir === 'skip' ? -18  : 18;
+      card.style.transition = 'transform 0.38s ease, opacity 0.38s ease';
+      card.style.transform  = 'translateX(' + tx + 'px) rotate(' + rot + 'deg)';
+      card.style.opacity    = '0';
+      setTimeout(cb, 400);
+    }
+
+    function initDrag() {
+      var card = document.getElementById('active-card');
+      if (!card) return;
+      var startX = 0, dragging = false, dx = 0;
+
+      function down(e) {
+        dragging = true;
+        startX = e.touches ? e.touches[0].clientX : e.clientX;
+        card.style.transition = 'none';
+      }
+      function move(e) {
+        if (!dragging) return;
+        dx = (e.touches ? e.touches[0].clientX : e.clientX) - startX;
+        card.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx * 0.07) + 'deg)';
+        var ss = card.querySelector('.stamp-skip');
+        var sm = card.querySelector('.stamp-match');
+        if      (dx < -40) { ss.style.opacity = Math.min(1, Math.abs(dx) / 120); sm.style.opacity = 0; }
+        else if (dx >  40) { sm.style.opacity = Math.min(1, dx / 120);           ss.style.opacity = 0; }
+        else               { ss.style.opacity = 0; sm.style.opacity = 0; }
+      }
+      function up() {
+        if (!dragging) return;
+        dragging = false;
+        card.querySelector('.stamp-skip').style.opacity  = 0;
+        card.querySelector('.stamp-match').style.opacity = 0;
+        if      (dx < -100) skipRider();
+        else if (dx >  100) matchRider();
+        else {
+          card.style.transition = 'transform 0.3s ease';
+          card.style.transform  = 'none';
+        }
+        dx = 0;
+      }
+
+      card.addEventListener('mousedown',  down);
+      card.addEventListener('touchstart', down, { passive: true });
+      window.addEventListener('mousemove', move);
+      window.addEventListener('touchmove', move, { passive: true });
+      window.addEventListener('mouseup',   up);
+      window.addEventListener('touchend',  up);
+    }
+
+    renderCard();
+  </script>
+
+</body>
+</html>
